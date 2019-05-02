@@ -183,7 +183,7 @@ public class FilesMojoV2 extends AbstractMojo {
     String property = newProperty != null ? newProperty : deprecatedProperty;
     if (property != null) {
       List<String> paths = ConfigurationPropertyValidator.parseListProperty(property);
-      return paths.stream().map(Paths::get).collect(Collectors.toList());
+      return paths.stream().map(Paths::get).map(Path::toAbsolutePath).collect(Collectors.toList());
     }
 
     // Try getting extra directory from project pom
@@ -206,6 +206,7 @@ public class FilesMojoV2 extends AbstractMojo {
             return Arrays.stream(child.getChildren())
                 .map(Xpp3Dom::getValue)
                 .map(Paths::get)
+                .map(Path::toAbsolutePath)
                 .collect(Collectors.toList());
           }
         }
@@ -214,12 +215,13 @@ public class FilesMojoV2 extends AbstractMojo {
           Xpp3Dom child = extraDirectoryConfiguration.getChild("path");
           if (child != null) {
             // <extraDirectory><path>...</path></extraDirectory>
-            return Collections.singletonList(Paths.get(child.getValue()));
+            return Collections.singletonList(Paths.get(child.getValue()).toAbsolutePath());
           }
           // <extraDirectory>...</extraDirectory>
           String value = extraDirectoryConfiguration.getValue();
           if (value != null) {
-            return Collections.singletonList(Paths.get(extraDirectoryConfiguration.getValue()));
+            return Collections.singletonList(
+                Paths.get(extraDirectoryConfiguration.getValue()).toAbsolutePath());
           }
         }
       }
@@ -228,6 +230,6 @@ public class FilesMojoV2 extends AbstractMojo {
     // Return default if not found
     Path projectBase = Preconditions.checkNotNull(project).getBasedir().getAbsoluteFile().toPath();
     Path srcMainJib = Paths.get("src", "main", "jib");
-    return Collections.singletonList(projectBase.resolve(srcMainJib));
+    return Collections.singletonList(projectBase.resolve(srcMainJib).toAbsolutePath());
   }
 }
